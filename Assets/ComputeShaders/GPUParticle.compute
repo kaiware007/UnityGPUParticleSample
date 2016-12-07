@@ -1,0 +1,92 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Init
+#pragma kernel Emit
+#pragma kernel Update
+
+#define THREAD_NUM_X 16
+
+ struct ParticleData
+ {
+	bool isActive;      // 有効フラグ
+	float3 position;    // 座標
+    float3 velocity;    // 加速度
+    float4 color;       // 色
+    float duration;     // 生存時間
+	float scale;        // サイズ
+};
+
+// 乱数生成
+inline float rnd(float2 p){
+    return frac(sin(dot(p ,float2(12.9898, 78.233))) * 43758.5453);
+}
+
+inline float3 rnd3(float2 p){
+	return 2.0 * (float3(rnd(p * 1), rnd(p * 2), rnd(p * 3)) - 0.5);
+}
+
+float3 hsv_to_rgb(float3 HSV)
+{
+	float4 k = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	float3 p = abs(frac(HSV.xxx + k.xyz) * 6.0 - k.www);
+	return HSV.z * lerp(k.xxx, clamp(p - k.xxx, 0.0, 1.0), HSV.y);
+}
+
+RWStructuredBuffer<ParticleData> _Particles;
+AppendStructuredBuffer<uint> _DeadList;
+ConsumeStructuredBuffer<uint> _ParticlePool;
+
+float3 _EmitPosition;
+float _VelocityMax;
+float _DT;
+float _Time;
+float _LifeTime;
+float _ScaleMin;
+float _ScaleMax;
+float _Gravity;
+float _Sai;
+float _Val;
+
+[numthreads(THREAD_NUM_X, 1, 1)]
+void Init (uint3 id : SV_DispatchThreadID)
+{
+	uint no = id.x;
+
+	_Particles[no].isActive = false;
+	_DeadList.Append(no);
+}
+
+[numthreads(THREAD_NUM_X, 1, 1)]
+void Emit ()
+{
+	uint no = _ParticlePool.Consume();
+
+	float2 seed = float2(no + _Time, no + 1.583 + _Time);
+	float speed = rnd(seed) * _VelocityMax;
+	float scale = (rnd(seed + 3) - 0.5) * 2.0 * (_ScaleMax - _ScaleMin) + _ScaleMin;
+	float h = rnd(seed + 5);	// color
+
+	_Particles[no].isActive = true;
+	_Particles[no].position = _EmitPosition;
+	_Particles[no].velocity = (rnd3(seed + 3.15)) * speed;
+	_Particles[no].color = float4(hsv_to_rgb(float3(h, _Sai, _Val)),1);
+	_Particles[no].duration = _LifeTime;
+	_Particles[no].scale = scale;
+}
+
+[numthreads(THREAD_NUM_X, 1, 1)]
+void Update (uint3 id : SV_DispatchThreadID)
+{
+	uint no = id.x;
+
+	if(_Particles[no].isActive) {
+		_Particles[no].velocity.y -= _Gravity * _DT;
+		_Particles[no].position += _Particles[no].velocity * _DT;
+		_Particles[no].duration -= _DT;
+		_Particles[no].color.a = max(_Particles[no].duration / _LifeTime, 0);
+		if(_Particles[no].duration <= 0) {
+			_Particles[no].isActive = false;
+			_DeadList.Append(no);
+		}
+	}
+
+}
