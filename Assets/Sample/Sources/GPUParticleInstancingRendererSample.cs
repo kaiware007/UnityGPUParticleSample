@@ -7,11 +7,14 @@ using System.Runtime.InteropServices;
 
 public class GPUParticleInstancingRendererSample : GPUParticleInstancingRendererBase<GPUParticleData> {
 
+    Rect rect = new Rect(0, 32, 200, 32);
+
     private void OnGUI()
     {
         if (isCulling)
         {
-            int i = 0;
+            GUIStyle guiStyle = GUI.skin.box;
+            guiStyle.alignment = TextAnchor.UpperLeft;
             cameraDatas.Keys
             .Where(cam => cam.isActiveAndEnabled)
             .ToList().ForEach(cam =>
@@ -21,8 +24,7 @@ public class GPUParticleInstancingRendererSample : GPUParticleInstancingRenderer
                 {
                     data.inViewsCountBuffer.GetData(data.inViewsCounts);
 
-                    GUI.Label(new Rect(10, 72 + i * 64, 240, 64), "InViews / Active " + data.inViewsNum + " / " + particle.GetActiveParticleNum());
-                    i++;
+                    GUI.Box(rect, "InViews / Active " + data.inViewsNum + " / " + particle.GetActiveParticleNum(), GUI.skin.box);
                 }
             });
         }

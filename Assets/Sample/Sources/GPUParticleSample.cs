@@ -95,7 +95,7 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     }
 
     void OnGUI() {
-        GUI.Label(new Rect(10, 10, 240, 64), "Active " + particleActiveNum + " : Pool " + particlePoolNum + "/" + particleNum);
+        GUILayout.Box("Active " + particleActiveNum + " : Pool " + particlePoolNum + "/" + particleNum);
     }
 
 }
