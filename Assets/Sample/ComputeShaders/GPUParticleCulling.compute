@@ -13,7 +13,7 @@ struct ParticleData
 	float scale;        // サイズ
 };
 
-int _ParticleNum;
+uint _ParticleNum;
 
 float3 _CameraPos;
 float4x3 _CameraFrustumNormals;

@@ -96,20 +96,29 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
         if(particleActiveBuffer != null)
         {
             particleActiveBuffer.Release();
+            particleActiveBuffer = null;
         }
         if (particlePoolBuffer != null)
         {
             particlePoolBuffer.Release();
+            particlePoolBuffer = null;
         }
         if (particleBuffer != null)
         {
             particleBuffer.Release();
+            particleBuffer = null;
         }
         if(particlePoolCountBuffer != null)
         {
             particlePoolCountBuffer.Release();
+            particlePoolCountBuffer = null;
         }
-    }
+        if(particleActiveCountBuffer != null)
+        {
+            particleActiveCountBuffer.Release();
+            particleActiveCountBuffer = null;
+        }
+}
 
     // Use this for initialization
     protected virtual void Awake()

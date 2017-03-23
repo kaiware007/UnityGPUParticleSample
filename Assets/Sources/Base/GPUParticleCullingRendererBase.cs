@@ -31,6 +31,11 @@ public abstract class GPUParticleCullingRendererBase <T> : GPUParticleRendererBa
                 inViewsAppendBuffer.Release();
                 inViewsAppendBuffer = null;
             }
+            if(inViewsCountBuffer != null)
+            {
+                inViewsCountBuffer.Release();
+                inViewsCountBuffer = null;
+            }
         }
 
         const int NUM_THREAD_X = 32;
