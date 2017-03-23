@@ -12,6 +12,7 @@ public abstract class GPUParticleCullingRendererBase <T> : GPUParticleRendererBa
     {
         public ComputeBuffer inViewsAppendBuffer;
         public ComputeBuffer inViewsCountBuffer;
+        public int inViewsNum;
 
         public int[] inViewsCounts = { 0, 1, 0, 0 };
 
@@ -56,6 +57,8 @@ public abstract class GPUParticleCullingRendererBase <T> : GPUParticleRendererBa
 
             inViewsCountBuffer.SetData(inViewsCounts);
             ComputeBuffer.CopyCount(inViewsAppendBuffer, inViewsCountBuffer, 0);
+            inViewsCountBuffer.GetData(inViewsCounts);
+            inViewsNum = inViewsCounts[0];
         }
     }
     #endregion

@@ -11,7 +11,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
 
     #region define
     // ComputeShaderのスレッド数
-    protected const int THREAD_NUM_X = 16;
+    protected const int THREAD_NUM_X = 32;
     #endregion
 
     #region public

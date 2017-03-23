@@ -20,12 +20,10 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
     protected ComputeBuffer activeCountBuffer;
     #endregion
 
-    #region abstract
-    protected virtual void SetMaterialParam() { }
-    #endregion
-
     #region virtual
-    protected void Start()
+    protected virtual void SetMaterialParam() { }
+
+    protected virtual void Start()
     {
         particle = GetComponent<GPUParticleBase<T>>();
         if (particle != null)

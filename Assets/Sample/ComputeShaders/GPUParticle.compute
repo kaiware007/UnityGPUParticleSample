@@ -3,7 +3,7 @@
 #pragma kernel Emit
 #pragma kernel Update
 
-#define THREAD_NUM_X 16
+#define THREAD_NUM_X 32
 
  struct ParticleData
  {
