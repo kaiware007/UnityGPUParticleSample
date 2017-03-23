@@ -34,6 +34,7 @@ float3 hsv_to_rgb(float3 HSV)
 RWStructuredBuffer<ParticleData> _Particles;
 AppendStructuredBuffer<uint> _DeadList;
 ConsumeStructuredBuffer<uint> _ParticlePool;
+AppendStructuredBuffer<uint> _ActiveList;
 
 float3 _EmitPosition;
 float _VelocityMax;
@@ -86,6 +87,9 @@ void Update (uint3 id : SV_DispatchThreadID)
 		if(_Particles[no].duration <= 0) {
 			_Particles[no].isActive = false;
 			_DeadList.Append(no);
+		}
+		else {
+			_ActiveList.Append(no);
 		}
 	}
 

@@ -16,6 +16,8 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
     protected GPUParticleBase<T> particle;
     protected int particleNum;
     protected ComputeBuffer particleBuffer;
+    protected ComputeBuffer activeIndexBuffer;
+    protected ComputeBuffer activeCountBuffer;
     #endregion
 
     #region abstract
@@ -30,6 +32,8 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
         {
             particleNum = particle.GetParticleNum();
             particleBuffer = particle.GetParticleBuffer();
+            activeIndexBuffer = particle.GetActiveParticleBuffer();
+            activeCountBuffer = particle.GetParticleCountBuffer();
             Debug.Log("particleNum " + particleNum);
         }else
         {
@@ -41,7 +45,9 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
     {
         SetMaterialParam();
 
-        Graphics.DrawProcedural(MeshTopology.Points, particleNum);
+        material.DisableKeyword("GPUPARTICLE_CULLING_ON");
+
+        Graphics.DrawProceduralIndirect(MeshTopology.Points, activeCountBuffer);
     }
     #endregion
 

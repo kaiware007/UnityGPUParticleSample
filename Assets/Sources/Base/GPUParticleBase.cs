@@ -19,13 +19,14 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     public int emitMax = 8;
 
     public ComputeShader cs;
-    //public Material material;
     #endregion
 
     #region private
-    protected ComputeBuffer particleBuffer;
-    protected ComputeBuffer particlePoolBuffer;
-    protected ComputeBuffer particleCountBuffer;
+    protected ComputeBuffer particleBuffer;         // パーティクル構造体のバッファ
+    protected ComputeBuffer particleActiveBuffer;   // 使用中のパーティクルのインデックスのリスト
+    protected ComputeBuffer particlePoolBuffer;     // 未使用中のパーティクルのインデックスのリスト
+    protected ComputeBuffer particleActiveCountBuffer;  // particleActiveBuffer内の個数バッファ
+    protected ComputeBuffer particlePoolCountBuffer;    // particlePoolBuffer内の個数バッファ
     protected int particleNum = 0;
     protected int emitNum = 0;
     protected int[] particleCounts = null;
@@ -34,13 +35,18 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     protected int emitKernel = -1;
     protected int updateKernel = -1;
 
+    protected int particleActiveNum;
     protected int particlePoolNum;
     #endregion
 
     #region virtual
     public virtual int GetParticleNum() { return particleNum; }
+    public virtual int GetActiveParticleNum() { return particleActiveNum; }
 
     public virtual ComputeBuffer GetParticleBuffer() { return particleBuffer; }
+    public virtual ComputeBuffer GetActiveParticleBuffer() { return particleActiveBuffer; }
+
+    public virtual ComputeBuffer GetParticleCountBuffer() { return particleActiveCountBuffer; }
 
     /// <summary>
     /// 初期化
@@ -52,12 +58,15 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
         Debug.Log("particleNum " + particleNum + " emitNum " + emitNum + " THREAD_NUM_X " + THREAD_NUM_X);
 
         particleBuffer = new ComputeBuffer(particleNum, Marshal.SizeOf(typeof(T)), ComputeBufferType.Default);
+        particleActiveBuffer = new ComputeBuffer(particleNum, Marshal.SizeOf(typeof(int)), ComputeBufferType.Append);
+        particleActiveBuffer.SetCounterValue(0);
         particlePoolBuffer = new ComputeBuffer(particleNum, Marshal.SizeOf(typeof(int)), ComputeBufferType.Append);
         particlePoolBuffer.SetCounterValue(0);
-        particleCountBuffer = new ComputeBuffer(4, Marshal.SizeOf(typeof(int)), ComputeBufferType.IndirectArguments);
+        particleActiveCountBuffer = new ComputeBuffer(4, Marshal.SizeOf(typeof(int)), ComputeBufferType.IndirectArguments);
+        particlePoolCountBuffer = new ComputeBuffer(4, Marshal.SizeOf(typeof(int)), ComputeBufferType.IndirectArguments);
         particleCounts = new int[]{ 0, 1, 0, 0 };
-        particleCountBuffer.SetData(particleCounts);
-
+        particlePoolCountBuffer.SetData(particleCounts);
+        
         initKernel = cs.FindKernel("Init");
         emitKernel = cs.FindKernel("Emit");
         updateKernel = cs.FindKernel("Update");
@@ -84,6 +93,10 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     /// ComputeBufferの解放
     /// </summary>
     protected virtual void ReleaseBuffer() {
+        if(particleActiveBuffer != null)
+        {
+            particleActiveBuffer.Release();
+        }
         if (particlePoolBuffer != null)
         {
             particlePoolBuffer.Release();
@@ -92,9 +105,9 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
         {
             particleBuffer.Release();
         }
-        if(particleCountBuffer != null)
+        if(particlePoolCountBuffer != null)
         {
-            particleCountBuffer.Release();
+            particlePoolCountBuffer.Release();
         }
     }
 

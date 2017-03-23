@@ -18,6 +18,9 @@
 			#pragma fragment frag
 
 			#include "UnityCG.cginc"
+			#include "GPUParticleCommon.cginc"
+
+			#pragma shader_feature GPUPARTICLE_CULLING_ON
 
 			struct ParticleData
 			{
@@ -38,16 +41,34 @@
 			};
 
 			StructuredBuffer<ParticleData> _Particles;
+			//StructuredBuffer<uint> _ActiveIndexList;
 			sampler2D _MainTex;
 			float4 _MainTex_ST;
 			
+			// test
+			//StructuredBuffer<uint> _ParticleActiveList;
+			//StructuredBuffer<uint> _InViewsList;
+
+			//uint GetParticleIndex(int index) {
+			//	//#ifdef GPUPARTICLE_CULLING_ON
+			//	//	return _InViewsList[index];
+			//	//#else
+			//	//	return _ParticleActiveList[index];
+			//	//#endif
+
+			//	return _InViewsList[index];
+
+			//	//return _ParticleActiveList[index];
+			//}
+
 			v2f vert (uint id : SV_VertexID)
 			{
 				v2f o;
-				o.pos = float4(_Particles[id].position, 1);
+				int index = GetParticleIndex(id);
+				o.pos = float4(_Particles[index].position, 1);
 				o.uv = float2(0,0);
-				o.col = _Particles[id].color;
-				o.scale = _Particles[id].isActive ? _Particles[id].scale : 0;
+				o.col = _Particles[index].color;
+				o.scale = _Particles[index].isActive ? _Particles[index].scale : 0;
 				//o.scale = 1;
 
 				return o;
@@ -98,6 +119,7 @@
 				// sample the texture
 				fixed4 col = tex2D(_MainTex, i.uv) * i.col;
 				return col;
+				//return fixed4(1, 0, 0, 1);	// test
 			}
 			ENDCG
 		}

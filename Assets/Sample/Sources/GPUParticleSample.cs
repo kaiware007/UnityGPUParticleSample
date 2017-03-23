@@ -27,8 +27,6 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     [Range(0,1)]
     public float val = 1;   // 明るさ
 
-    //public ComputeShader cs;
-    //public Material material;
     public Camera camera;
     #endregion
 
@@ -37,13 +35,21 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     /// </summary>
     protected override void UpdateParticle()
     {
+        particleActiveBuffer.SetCounterValue(0);
+
         cs.SetFloat("_DT", Time.deltaTime);
         cs.SetFloat("_LifeTime", lifeTime);
         cs.SetFloat("_Gravity", gravity);
         cs.SetBuffer(updateKernel, "_Particles", particleBuffer);
         cs.SetBuffer(updateKernel, "_DeadList", particlePoolBuffer);
-        
+        cs.SetBuffer(updateKernel, "_ActiveList", particleActiveBuffer);
+
         cs.Dispatch(updateKernel, particleNum / THREAD_NUM_X, 1, 1);
+
+        particleActiveCountBuffer.SetData(particleCounts);
+        ComputeBuffer.CopyCount(particleActiveBuffer, particleActiveCountBuffer, 0);
+        particleActiveCountBuffer.GetData(particleCounts);
+        particleActiveNum = particleCounts[0];
     }
 
     /// <summary>
@@ -53,9 +59,9 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     /// <param name="position"></param>
     void EmitParticle(Vector3 position)
     {
-        particleCountBuffer.SetData(particleCounts);
-        ComputeBuffer.CopyCount(particlePoolBuffer, particleCountBuffer, 0);
-        particleCountBuffer.GetData(particleCounts);
+        particlePoolCountBuffer.SetData(particleCounts);
+        ComputeBuffer.CopyCount(particlePoolBuffer, particlePoolCountBuffer, 0);
+        particlePoolCountBuffer.GetData(particleCounts);
         //Debug.Log("EmitParticle Pool Num " + particleCounts[0] + " position " + position);
         particlePoolNum = particleCounts[0];
 
@@ -89,7 +95,7 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     }
 
     void OnGUI() {
-        GUI.Label(new Rect(10, 10, 240, 64), "Count " + particlePoolNum + "/" + particleNum);
+        GUI.Label(new Rect(10, 10, 240, 64), "Active " + particleActiveNum + " : Pool " + particlePoolNum + "/" + particleNum);
     }
 
 }

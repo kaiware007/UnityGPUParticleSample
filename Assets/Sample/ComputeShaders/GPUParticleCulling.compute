@@ -1,0 +1,48 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CheckCameraCulling
+
+#define THREAD_NUM_X 32
+
+struct ParticleData
+{
+	bool isActive;      // 有効フラグ
+	float3 position;    // 座標
+	float3 velocity;    // 加速度
+	float4 color;       // 色
+	float duration;     // 生存時間
+	float scale;        // サイズ
+};
+
+int _ParticleNum;
+
+float3 _CameraPos;
+float4x3 _CameraFrustumNormals;
+StructuredBuffer<ParticleData> _ParticleBuffer;
+AppendStructuredBuffer<uint> _InViewAppend;
+StructuredBuffer<uint> _ParticleActiveList;
+
+[numthreads(THREAD_NUM_X,1,1)]
+void CheckCameraCulling(uint3 id : SV_DispatchThreadID)
+{
+	uint idx = id.x;
+
+	uint particleIndex = _ParticleActiveList[idx];
+
+	if (particleIndex < _ParticleNum) {
+		ParticleData data = _ParticleBuffer[particleIndex];
+
+		// CheckCulling!
+		float3 posFromCamera = data.position - _CameraPos;
+		float scale = data.scale;
+
+		if (data.isActive && 
+			(dot(_CameraFrustumNormals[0], posFromCamera) > -scale)
+			&& (dot(_CameraFrustumNormals[1], posFromCamera) > -scale)
+			&& (dot(_CameraFrustumNormals[2], posFromCamera) > -scale)
+			&& (dot(_CameraFrustumNormals[3], posFromCamera) > -scale)
+			)
+		{
+			_InViewAppend.Append(particleIndex);
+		}
+	}
+}
