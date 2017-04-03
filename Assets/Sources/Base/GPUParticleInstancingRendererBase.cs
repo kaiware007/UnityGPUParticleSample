@@ -22,6 +22,12 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
     public Vector3 rotationOffsetAxis = Vector3.right;
     public float rotationOffsetAngle = 0;
 
+    /// <summary>
+    /// 計算済みのRotationOffset
+    /// </summary>
+    [HideInInspector]
+    public Vector4 rotateOffset;    // 計算済みのRotationOffset
+
     // メッシュデータ
     protected ComputeBuffer meshIndicesBuffer;
     protected ComputeBuffer meshVertexBuffer;
@@ -45,7 +51,6 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
         var indices = mesh.GetIndices(0);
         var vertexDataArray = Enumerable.Range(0, mesh.vertexCount).Select(b =>
         {
-            //Debug.Log("b: " + b + " / " + mesh.vertexCount);
             return new VertexData()
             {
                 vertex = mesh.vertices[b],
@@ -62,6 +67,15 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
         vertexBuffer.SetData(vertexDataArray);
     }
 
+    protected void UpdateRotationOffsetAxis()
+    {
+        rotateOffset.x = rotationOffsetAxis.x;
+        rotateOffset.y = rotationOffsetAxis.y;
+        rotateOffset.z = rotationOffsetAxis.z;
+        rotateOffset.w = rotationOffsetAngle * Mathf.Deg2Rad;
+    }
+
+
     protected override void Start()
     {
         base.Start();
@@ -71,9 +85,11 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
 
     protected override void SetMaterialParam()
     {
+        UpdateRotationOffsetAxis();
+
         material.SetBuffer("_vertex", meshVertexBuffer);
         material.SetBuffer("_indices", meshIndicesBuffer);
-        material.SetVector("_RotationOffsetAxis", new Vector4(rotationOffsetAxis.x, rotationOffsetAxis.y, rotationOffsetAxis.z, rotationOffsetAngle * Mathf.Deg2Rad));
+        material.SetVector("_RotationOffsetAxis", rotateOffset);
 
         material.SetBuffer("_Particles", particleBuffer);
         material.SetBuffer("_ParticleActiveList", activeIndexBuffer);
@@ -81,11 +97,10 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
         material.SetPass(0);
     }
 
+    int[] debugCount = { 0, 0, 0, 0 };
+
     protected override void OnRenderObjectInternal()
     {
-        if ((Camera.current.cullingMask & (1 << gameObject.layer)) == 0)
-            return;
-
         if (isCulling)
         {
             var cam = Camera.current;
@@ -104,8 +119,8 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
                     material.EnableKeyword("GPUPARTICLE_CULLING_ON");
 
                     material.SetBuffer("_InViewsList", data.inViewsAppendBuffer);
-
-                    Graphics.DrawProcedural(MeshTopology.Triangles, meshIndicesNum, data.inViewsNum);   // 視界範囲内のものだけ描画
+                    
+                    Graphics.DrawProceduralIndirect(MeshTopology.Triangles, data.inViewsCountBuffer);   // 視界範囲内のものだけ描画
                 }
             }
         }
@@ -114,9 +129,23 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
             SetMaterialParam();
 
             material.DisableKeyword("GPUPARTICLE_CULLING_ON");
+            
+            Graphics.DrawProceduralIndirect(MeshTopology.Triangles, particle.GetParticleCountBuffer());   // 視界範囲内のものだけ描画
 
-            Graphics.DrawProcedural(MeshTopology.Triangles, meshIndicesNum, particle.GetActiveParticleNum());   // Activeなものをすべて描画
         }
+    }
+
+    protected override void UpdateVertexBuffer(Camera camera)
+    {
+
+        CullingData data = cameraDatas[camera];
+        if (data == null)
+        {
+            data = cameraDatas[camera] = new CullingData(particleNum);
+            data.SetVertexCount(meshIndicesNum);
+        }
+
+        data.Update(cullingCS, camera, particleNum, particleBuffer, activeIndexBuffer);
     }
 
     protected override void ReleaseBuffer()

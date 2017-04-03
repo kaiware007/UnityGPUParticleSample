@@ -7,6 +7,8 @@
 
 	CGINCLUDE
 #include "UnityCG.cginc"
+#include "Assets/Shaders/Libs/ColorUtil.cginc"
+#include "Assets/Shaders/Libs/Quaternion.cginc"
 #include "GPUParticleCommon.cginc"
 
 	struct VertexData
@@ -51,16 +53,17 @@
 		float3 normal = _vertex[idx].normal;
 		float4 tangent = _vertex[idx].tangent;
 
-		
 		uint iidx = GetParticleIndex(iid);
 
+		float4 rotation = getAngleAxisRotation(_RotationOffsetAxis.xyz, _RotationOffsetAxis.w);
+		
 		pos.xyz *= _Particles[iidx].scale;
+		pos.xyz = rotateWithQuaternion(pos.xyz, rotation);
 		pos.xyz += _Particles[iidx].position;
 
 		v2f o;
 		o.pos = mul(UNITY_MATRIX_VP, pos);
 		o.uv = uv;
-
 		o.color = _Particles[iidx].color;
 
 		return o;
@@ -82,16 +85,14 @@
 
 		Pass
 		{
-
-
 			Lighting Off
-
 
 			CGPROGRAM
 #pragma vertex vert
 #pragma fragment frag
 #pragma target 5.0
 #pragma shader_feature GPUPARTICLE_CULLING_ON
+
 
 			ENDCG
 		}

@@ -20,9 +20,11 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
     protected ComputeBuffer activeCountBuffer;
     #endregion
 
-    #region virtual
+    #region abstract
     protected virtual void SetMaterialParam() { }
+    #endregion
 
+    #region virtual
     protected virtual void Start()
     {
         particle = GetComponent<GPUParticleBase<T>>();
@@ -44,14 +46,17 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
         SetMaterialParam();
 
         material.DisableKeyword("GPUPARTICLE_CULLING_ON");
-
-        Graphics.DrawProceduralIndirect(MeshTopology.Points, activeCountBuffer);
+        
+        Graphics.DrawProceduralIndirect(MeshTopology.Points, activeCountBuffer, 0);
     }
     #endregion
 
     #region private
     void OnRenderObject()
     {
+        if ((Camera.current.cullingMask & (1 << gameObject.layer)) == 0)
+            return;
+
         OnRenderObjectInternal();
     }
     #endregion
