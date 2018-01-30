@@ -34,6 +34,10 @@
 		float4 pos : SV_POSITION;
 		float2 uv : TEXCOORD0;
 		float4 color : COLOR;
+		//float3 normal : TEXCOORD1;
+		//float4 tangent : TEXCOORD2;
+		//float3 worldNormal  : TEXCOORD3;
+		//float3 worldPos : TEXCOORD4;
 	};
 
 	StructuredBuffer<uint> _indices;
@@ -53,8 +57,11 @@
 		float3 normal = _vertex[idx].normal;
 		float4 tangent = _vertex[idx].tangent;
 
+		//float4 Q = getAngleAxisRotation(_RotationOffsetAxis.xyz, _RotationOffsetAxis.w);
+
 		uint iidx = GetParticleIndex(iid);
 
+		//float4 rotation = qmul(_Particles[iidx].rotation, Q);
 		float4 rotation = getAngleAxisRotation(_RotationOffsetAxis.xyz, _RotationOffsetAxis.w);
 		
 		pos.xyz *= _Particles[iidx].scale;
@@ -64,6 +71,11 @@
 		v2f o;
 		o.pos = mul(UNITY_MATRIX_VP, pos);
 		o.uv = uv;
+		//o.normal = normal;
+		//o.tangent = tangent;
+		//o.worldNormal = mul(unity_ObjectToWorld, normal);
+		//o.worldPos = mul(unity_ObjectToWorld, pos).xyz;
+		//o.color = float4(1, 1, 1, 1);
 		o.color = _Particles[iidx].color;
 
 		return o;
@@ -81,11 +93,28 @@
 	SubShader
 	{
 		Tags{ "RenderType" = "Opaque" }
+		//Tags{ "RenderType" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 		LOD 100
 
 		Pass
 		{
+			Name "DEFERRED"
+			//Blend SrcAlpha OneMinusSrcAlpha
+
+			//Cull Off
+			//Cull Back
 			Lighting Off
+			//Blend OneMinusDstColor One // soft additive
+			//Blend One One 
+			/*Stencil{
+			Comp Always
+			Pass Replace
+			Ref 128
+			}*/
+
+			//ZWrite Off
+			//Blend One One
+			//Cull Off
 
 			CGPROGRAM
 #pragma vertex vert

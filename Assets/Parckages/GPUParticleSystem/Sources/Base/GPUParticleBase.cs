@@ -20,6 +20,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     public int emitMax = 8;
 
     public ComputeShader cs;
+    //public Material material;
     #endregion
 
     #region private
@@ -36,6 +37,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     protected int emitKernel = -1;
     protected int updateKernel = -1;
 
+    //protected int particleActiveNum = 0;
     protected int particlePoolNum = 0;
 
     protected int cspropid_Particles;
@@ -43,6 +45,8 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     protected int cspropid_ActiveList;
     protected int cspropid_EmitNum;
     protected int cspropid_ParticlePool;
+
+	protected bool isInitialized = false;
     #endregion
 
     #region virtual
@@ -54,28 +58,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     /// </summary>
     /// <returns></returns>
     public virtual int GetActiveParticleNum() {
-        for (int i = 0; i < debugounts.Length; i++)
-        {
-            debugounts[i] = 0;
-        }
-
         particleActiveCountBuffer.GetData(debugounts);
-        return debugounts[1];
-    }
-
-    /// <summary>
-    /// 残りの未使用パーティクルの数を取得（デバッグ機能）
-    /// </summary>
-    /// <returns></returns>
-    public virtual int GetPoolParticleNum()
-    {
-        for (int i = 0; i < debugounts.Length; i++)
-        {
-            debugounts[i] = 0;
-        }
-
-        ComputeBuffer.CopyCount(particlePoolBuffer, particlePoolCountBuffer, 0);
-        particlePoolCountBuffer.GetData(debugounts);
         return debugounts[1];
     }
 
@@ -83,6 +66,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     public virtual ComputeBuffer GetActiveParticleBuffer() { return particleActiveBuffer; }
 
     public virtual ComputeBuffer GetParticleCountBuffer() { return particleActiveCountBuffer; }
+    //public virtual ComputeBuffer GetActiveCountBuffer() { return particleActiveCountBuffer; }
 
     public virtual void SetVertexCount(int vertexNum)
     {
@@ -96,7 +80,7 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
     {
         particleNum = (particleMax / THREAD_NUM_X) * THREAD_NUM_X;
         emitNum = (emitMax / THREAD_NUM_X) * THREAD_NUM_X;
-        Debug.Log("particleNum " + particleNum + " emitNum " + emitNum + " THREAD_NUM_X " + THREAD_NUM_X);
+        //Debug.Log("particleNum " + particleNum + " emitNum " + emitNum + " THREAD_NUM_X " + THREAD_NUM_X);
 
         particleBuffer = new ComputeBuffer(particleNum, Marshal.SizeOf(typeof(T)), ComputeBufferType.Default);
         particleActiveBuffer = new ComputeBuffer(particleNum, Marshal.SizeOf(typeof(int)), ComputeBufferType.Append);
@@ -117,11 +101,13 @@ public abstract class GPUParticleBase<T> : MonoBehaviour where T : struct {
         cspropid_ParticlePool = ShaderDefines.GetBufferPropertyID(ShaderDefines.BufferID._ParticlePool);
         cspropid_EmitNum = ShaderDefines.GetIntPropertyID(ShaderDefines.IntID._EmitNum);
 
-        Debug.Log("initKernel " + initKernel + " emitKernel " + emitKernel + " updateKernel " + updateKernel);
+        //Debug.Log("initKernel " + initKernel + " emitKernel " + emitKernel + " updateKernel " + updateKernel);
 
         cs.SetBuffer(initKernel, cspropid_Particles, particleBuffer);
         cs.SetBuffer(initKernel, cspropid_DeadList, particlePoolBuffer);
         cs.Dispatch(initKernel, particleNum / THREAD_NUM_X, 1, 1);
+
+		isInitialized = true;
     }
 
     /// <summary>

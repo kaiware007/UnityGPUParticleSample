@@ -34,7 +34,7 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
             particleBuffer = particle.GetParticleBuffer();
             activeIndexBuffer = particle.GetActiveParticleBuffer();
             activeCountBuffer = particle.GetParticleCountBuffer();
-            Debug.Log("particleNum " + particleNum);
+            //Debug.Log("particleNum " + particleNum);
         }else
         {
             Debug.LogError("Particle Class Not Found!!" + typeof(GPUParticleBase<T>).FullName);
@@ -46,8 +46,9 @@ public class GPUParticleRendererBase <T> : MonoBehaviour where T : struct {
         SetMaterialParam();
 
         material.DisableKeyword("GPUPARTICLE_CULLING_ON");
-        
-        Graphics.DrawProceduralIndirect(MeshTopology.Points, activeCountBuffer, 0);
+
+        //Graphics.DrawProcedural(MeshTopology.Points, activeIndexBuffer);
+        Graphics.DrawProceduralIndirect(MeshTopology.Points, activeCountBuffer, 1);
     }
     #endregion
 

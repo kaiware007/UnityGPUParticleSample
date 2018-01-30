@@ -42,15 +42,16 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
     /// <param name="indicesNum"></param>
     void InitMeshDataBuffer(Mesh mesh, out ComputeBuffer vertexBuffer, out ComputeBuffer indicesBuffer, out int indicesNum)
     {
-        Debug.Log("Mesh " + mesh.name);
-        Debug.Log("Vertex " + mesh.vertexCount);
-        Debug.Log("Normal " + mesh.normals.Length);
-        Debug.Log("UV " + mesh.uv.Length);
-        Debug.Log("TANGENTS " + mesh.tangents.Length);
+        //Debug.Log("Mesh " + mesh.name);
+        //Debug.Log("Vertex " + mesh.vertexCount);
+        //Debug.Log("Normal " + mesh.normals.Length);
+        //Debug.Log("UV " + mesh.uv.Length);
+        //Debug.Log("TANGENTS " + mesh.tangents.Length);
 
         var indices = mesh.GetIndices(0);
         var vertexDataArray = Enumerable.Range(0, mesh.vertexCount).Select(b =>
         {
+            //Debug.Log("b: " + b + " / " + mesh.vertexCount);
             return new VertexData()
             {
                 vertex = mesh.vertices[b],
@@ -89,6 +90,7 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
 
         material.SetBuffer("_vertex", meshVertexBuffer);
         material.SetBuffer("_indices", meshIndicesBuffer);
+        //material.SetVector("_RotationOffsetAxis", new Vector4(rotationOffsetAxis.x, rotationOffsetAxis.y, rotationOffsetAxis.z, rotationOffsetAngle * Mathf.Deg2Rad));
         material.SetVector("_RotationOffsetAxis", rotateOffset);
 
         material.SetBuffer("_Particles", particleBuffer);
@@ -119,8 +121,14 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
                     material.EnableKeyword("GPUPARTICLE_CULLING_ON");
 
                     material.SetBuffer("_InViewsList", data.inViewsAppendBuffer);
-                    
+
+                    //data.inViewsCountBuffer.GetData(debugCount);
+
+                    //Graphics.DrawProcedural(MeshTopology.Triangles, meshIndicesNum, data.inViewsNum);   // 視界範囲内のものだけ描画
                     Graphics.DrawProceduralIndirect(MeshTopology.Triangles, data.inViewsCountBuffer);   // 視界範囲内のものだけ描画
+
+                    //Debug.Log(name + " [0] " + debugCount[0] + " [1] " + debugCount[1] + " [2] " + debugCount[2] + " [3] " + debugCount[3]);
+
                 }
             }
         }
@@ -129,7 +137,8 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
             SetMaterialParam();
 
             material.DisableKeyword("GPUPARTICLE_CULLING_ON");
-            
+
+            //Graphics.DrawProcedural(MeshTopology.Triangles, meshIndicesNum, particle.GetActiveParticleNum());   // Activeなものをすべて描画
             Graphics.DrawProceduralIndirect(MeshTopology.Triangles, particle.GetParticleCountBuffer());   // 視界範囲内のものだけ描画
 
         }
@@ -145,6 +154,7 @@ public class GPUParticleInstancingRendererBase<T> : GPUParticleCullingRendererBa
             data.SetVertexCount(meshIndicesNum);
         }
 
+        //_SetCommonParameterForCS(cullingCS);
         data.Update(cullingCS, camera, particleNum, particleBuffer, activeIndexBuffer);
     }
 

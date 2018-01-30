@@ -27,6 +27,8 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     [Range(0,1)]
     public float val = 1;   // 明るさ
 
+    //public ComputeShader cs;
+    //public Material material;
     public Camera camera;
     #endregion
 
@@ -46,10 +48,10 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
 
         cs.Dispatch(updateKernel, particleNum / THREAD_NUM_X, 1, 1);
 
-        particleCounts[0] = 1;
-        particleCounts[1] = 1;
         particleActiveCountBuffer.SetData(particleCounts);
-        ComputeBuffer.CopyCount(particleActiveBuffer, particleActiveCountBuffer, 4);
+        ComputeBuffer.CopyCount(particleActiveBuffer, particleActiveCountBuffer, 0);
+        //particleActiveCountBuffer.GetData(particleCounts);
+        //particleActiveNum = particleCounts[0];
     }
 
     /// <summary>
@@ -60,11 +62,12 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
     void EmitParticle(Vector3 position)
     {
         particlePoolCountBuffer.SetData(particleCounts);
-        ComputeBuffer.CopyCount(particlePoolBuffer, particlePoolCountBuffer, 4);
+        ComputeBuffer.CopyCount(particlePoolBuffer, particlePoolCountBuffer, 0);
         particlePoolCountBuffer.GetData(particleCounts);
-        particlePoolNum = particleCounts[1];
+        //Debug.Log("EmitParticle Pool Num " + particleCounts[0] + " position " + position);
+        particlePoolNum = particleCounts[0];
 
-        if (particlePoolNum < emitNum) return;   // emitNum未満なら発生させない
+        if (particleCounts[0] < emitNum) return;   // emitNum未満なら発生させない
 
         cs.SetVector("_EmitPosition", position);
         cs.SetFloat("_VelocityMax", velocityMax);
@@ -92,5 +95,9 @@ public class GPUParticleSample : GPUParticleBase<GPUParticleData> {
         }
         UpdateParticle();
     }
+
+    //void OnGUI() {
+    //    GUI.Label(new Rect(10, 10, 240, 64), "Active " + particleActiveNum + " : Pool " + particlePoolNum + "/" + particleNum);
+    //}
 
 }
